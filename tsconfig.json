@@ -5,6 +5,7 @@
   },
   "include": [
     "src",
+    "@modelsjs/types",
     "node_modules/@modelsjs/types",
     "../../node_modules/@modelsjs/types"
   ]
