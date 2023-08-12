@@ -1,13 +1,9 @@
-import type { Model, ModelState } from './index';
-import type { ModelError } from './error';
-import type { ModelClassSign } from './symbols';
+import type { Model } from './index';
 
 export type TModelClass<M extends Model = Model, P extends OJSON = any> = M extends Model<infer PP, infer E>
     ? PP extends P
         ? {
-            new(props: P): Model<P, E>
-
-            [ModelClassSign]: boolean;
+            new(props: PP): Model<PP, E>
         }
         : never
     : never;
@@ -19,32 +15,26 @@ type ClassType<M extends Model = Model, P extends OJSON = any> = {
 export type TModelInstace<C extends ClassType, P extends OJSON = OJSON> = C extends ClassType<infer I, infer PP>
     ? PP extends P ? I : never : never;
 
-export type TModelProps<M extends Model> = M extends Model<infer P, any> ? P : never;
+export type TModelProps<M extends Model | TModelClass> = M extends Model<infer P, any>
+    ? P
+    : M extends TModelClass<infer MM, infer PP>
+        ? PP
+        : never;
 
 type KeysMatching<T extends object, V> = {
     [K in keyof T]-?: K extends V ? K : never
 }[keyof T];
 
-export type TModelResult<M extends Model> = M extends Model ? Pick<M, KeysMatching<M, string>> : never;
+export type TModelResult<M extends Model | TModelClass> = M extends Model
+    ? Pick<M, KeysMatching<M, string>>
+    : M extends TModelClass<infer MM, infer PP>
+        ? Pick<TModelInstace<TModelClass<MM, PP>>, KeysMatching<TModelInstace<TModelClass<MM, PP>>, string>>
+        : never;
 
 export type TModelError<M extends Model> = M extends Model<any, infer E> ? E : never;
 
 export type TModelFields = 'state' | 'error' | 'result' | 'revision';
 
-export type TSubscriptionHandler<T> = (next: T, prev: T) => void;
+export type TSubscription = (next: any, prev: any) => void;
 
-export type TSubscriptionData<M extends Model = Model, T extends TModelFields = TModelFields> =
-    T extends 'state' ?
-        ModelState :
-        T extends 'error' ?
-            Nullable<ModelError> :
-            T extends 'result' ?
-                Nullable<TModelResult<M>> :
-                T extends 'revision' ?
-                    number :
-                    T extends TModelFields ?
-                        Nullable<TModelResult<M>> | Nullable<ModelError> | ModelState :
-                        never;
-
-export type TSubscription<M extends Model = Model, T extends TModelFields = TModelFields> =
-    TSubscriptionHandler<TSubscriptionData<M, T>>;
+export type TSubscriptionLike = (next: any, prev: any) => any;

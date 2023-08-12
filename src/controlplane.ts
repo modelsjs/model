@@ -1,13 +1,11 @@
-import type { TSubscription, TModelFields } from './types';
-import { Model, ModelState } from './model';
+import type { TModelFields, TSubscription } from './types';
+import { ModelState } from './model';
 import { ModelError } from './error';
-
-const call = (...args: any[]) => (fn: (...args: any[]) => void) => fn(...args);
+import { transaction, events } from './utils';
 
 export class ModelControl {
-    public subscribtions: {
-        [F in TModelFields]: Set<TSubscription<Model, F>>
-    }
+
+    private events = events(['state', 'error', 'result', 'revision']);
 
     public get state(): ModelState {
         if (this.error) {
@@ -25,15 +23,6 @@ export class ModelControl {
 
     public revision: number = 1;
 
-    constructor() {
-        this.subscribtions = {
-            state: new Set<TSubscription<Model, 'state'>>(),
-            error: new Set<TSubscription<Model, 'error'>>(),
-            result: new Set<TSubscription<Model, 'result'>>(),
-            revision: new Set<TSubscription<Model, 'revision'>>(),
-        };
-    }
-
     public set(data: Nullable<OJSON | ModelError>) {
         this.transaction(() => {
             if (data instanceof ModelError) {
@@ -43,47 +32,18 @@ export class ModelControl {
                 this.error = null;
                 this.result = data || null;
             }
+        }, (changes) => {
+            changes.forEach(([field, prev, curr]) => {
+                this.events.notify(field, prev, curr);
+            });
+
+            this.events.notify('revision', this.revision, ++this.revision);
         });
     }
 
     public subscribe(field: TModelFields, handler: TSubscription) {
-        this.subscribtions[field].add(handler);
+        return this.events.subscribe(field, handler);
     }
 
-    public unsubscribe(field: TModelFields, handler: TSubscription) {
-        this.subscribtions[field].delete(handler);
-    }
-
-    private transaction(tx: () => void) {
-        const {state, error, result, revision} = this;
-
-        tx();
-
-        if ([
-            this.check('state', state),
-            this.check('error', error),
-            this.check('result', result)
-        ].some(Boolean)) {
-            this.notify('revision', revision, ++this.revision);
-        }
-
-    }
-
-    private check(field: TModelFields, prev: any): boolean {
-        const next = this[field];
-
-        if (next !== prev) {
-            this.notify(field, prev, next);
-
-            return true;
-        }
-
-        return false;
-    }
-
-    private notify(field: TModelFields, prev: any, next: any) {
-        if (this.subscribtions[field].size) {
-            [...this.subscribtions[field]].forEach(call(next, prev));
-        }
-    }
+    private transaction = transaction(['state', 'error', 'result']);
 }

@@ -1,4 +1,4 @@
-import type { TModelError, TModelFields, TModelResult, TSubscription, TSubscriptionData } from './types';
+import type { TModelError, TModelFields, TModelResult, TSubscription, TSubscriptionLike } from './types';
 import type { Model } from './model';
 import type { ModelError } from './error';
 import { state, error, result, Props, ControlPlane } from './symbols';
@@ -24,37 +24,29 @@ export function getResult<M extends Model>(model: M) {
     return model[result];
 }
 
-export function on<M extends Model = Model, F extends TModelFields = TModelFields>(
-    model: M,
-    field: F,
-    handler: TSubscription<M, F>
+export function on<T = unknown>(
+    model: Model,
+    field: TModelFields,
+    handler: TSubscriptionLike
 ) {
-    const dispose = () => {
-        model[ControlPlane].unsubscribe(field, ref);
-    };
     const ref: TSubscription = (next, prev) => {
-        handler(next as TSubscriptionData<M, F>, prev as TSubscriptionData<M, F>);
+        handler(next, prev);
     };
 
-    model[ControlPlane].subscribe(field, ref);
-
-    return dispose;
+    return model[ControlPlane].subscribe(field, ref);
 }
 
 export function once<M extends Model = Model, F extends TModelFields = TModelFields>(
     model: M,
     field: F,
-    handler: TSubscription<M, F>
+    handler: TSubscriptionLike
 ) {
-    const dispose = () => {
-        model[ControlPlane].unsubscribe(field, ref);
-    };
     const ref: TSubscription = (next, prev) => {
         dispose();
-        handler(next as TSubscriptionData<M, F>, prev as TSubscriptionData<M, F>);
+        handler(next, prev);
     };
 
-    model[ControlPlane].subscribe(field, ref);
+    const dispose = model[ControlPlane].subscribe(field, ref);
 
     return dispose;
 }
