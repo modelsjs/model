@@ -3,10 +3,14 @@ import type { Model } from './index';
 export class ModelError extends Error {
     constructor(
         public readonly model: Model,
-        message?: string
+        data?: string | Record<string, any>
     ) {
-        super(message);
+        super(typeof data === 'string' ? data : data?.message);
 
         this.model = model;
+
+        if (data && typeof data === 'object') {
+            Object.assign(this, data);
+        }
     }
 }

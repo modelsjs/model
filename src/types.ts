@@ -3,7 +3,9 @@ import type { Model } from './index';
 export type TModelClass<M extends Model = Model, P extends OJSON = any> = M extends Model<infer PP, infer E>
     ? PP extends P
         ? {
-            new(props: PP): Model<PP, E>
+            new(props: PP): Model<PP, E>;
+
+            is(Class: any): boolean;
         }
         : never
     : never;
@@ -31,9 +33,13 @@ export type TModelResult<M extends Model | TModelClass> = M extends Model
         ? Pick<TModelInstace<TModelClass<MM, PP>>, KeysMatching<TModelInstace<TModelClass<MM, PP>>, string>>
         : never;
 
-export type TModelError<M extends Model> = M extends Model<any, infer E> ? E : never;
-
-export type TModelFields = 'state' | 'error' | 'result' | 'revision';
+export type TModelError<M extends Model | TModelClass> = M extends Model<any, infer E>
+    ? E
+    : M extends TModelClass<infer MM>
+        ? MM extends Model<any, infer E>
+            ? E
+            : never
+        : never;
 
 export type TSubscription = (next: any, prev: any) => void;
 

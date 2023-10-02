@@ -1,5 +1,7 @@
 export const ModelClassSign = Symbol('ModelClassSign');
 
+export const CollectionClassSign = Symbol('CollectionClassSign');
+
 export const ControlPlane = Symbol('ModelControl');
 
 export const Props = Symbol('Props');

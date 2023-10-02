@@ -1,7 +1,8 @@
 import { ModelError } from './error';
 import { ModelClassSign, ControlPlane, Props, state, error, result, revision } from './symbols';
-import { ModelControl } from './controlplane';
+import { ModelControl, ControlFields } from './controlplane';
 import { InstanceGuard } from './guards';
+import { TModelClass } from './types';
 
 export enum ModelState {
     Initial = 'initial',
@@ -11,6 +12,14 @@ export enum ModelState {
 
 export class Model<P extends OJSON = OJSON, E extends ModelError = ModelError> {
     static [ModelClassSign] = true;
+
+    static isModel(instance: any): instance is Model {
+        return instance instanceof Model;
+    }
+
+    static is(instance: any): instance is typeof this {
+        return instance instanceof this;
+    }
 
     readonly [ControlPlane]!: ModelControl;
 
@@ -33,18 +42,22 @@ export class Model<P extends OJSON = OJSON, E extends ModelError = ModelError> {
     }
 
     get [state](): ModelState {
-        return this[ControlPlane].state;
+        return this[ControlPlane][ControlFields.State];
     }
 
     get [result](): Nullable<this> {
-        return this[ControlPlane].result as Nullable<this>;
+        return this[ControlPlane][ControlFields.Result] as Nullable<this>;
     }
 
     get [error](): Nullable<E> {
-        return this[ControlPlane].error as Nullable<E>;
+        return this[ControlPlane][ControlFields.Error] as Nullable<E>;
     }
 
     get [revision](): number {
-        return this[ControlPlane].revision;
+        return this[ControlPlane][ControlFields.Revision];
     }
+}
+
+export function isModelClass<M extends Model = Model>(target: any): target is TModelClass<M> {
+    return target && (ModelClassSign in target);
 }
