@@ -1,11 +1,13 @@
 {
   "name": "@modelsjs/model",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "type": "module",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "build:clean": "rimraf build",
+    "prepublishOnly": "npm run build:clean && npm run build"
   },
   "dependencies": {
     "assert": "^2.0.0",
@@ -14,6 +16,7 @@
   "devDependencies": {
     "@modelsjs/tsconfig": "^0.0.1",
     "@types/assert": "^1.5.6",
-    "@types/lodash": "^4.14.197"
+    "@types/lodash": "^4.14.197",
+    "rimraf": "^5.0.5"
   }
 }
